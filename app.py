@@ -5,6 +5,7 @@ import polyline
 import io
 import numpy as np
 from PyQt5.QtWidgets import QHBoxLayout, QApplication, QMainWindow, QVBoxLayout, QWidget, QComboBox, QPushButton, QListWidget, QLabel
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 # from scipy.optimize import linear_sum_assignment
 
@@ -123,6 +124,11 @@ class TSPMapApp(QMainWindow):
         self.map_view.setHtml(data.getvalue().decode())
 
     def calculate_route(self):
+
+        if not self.destination_cities_list.selectedItems():
+            QMessageBox.warning(self, "Selection Required", "Please select at least one city in 'Delivery Locations'.")
+            return  # Return early if no cities are selected
+    
         city_coords = {
                 'Los Angeles': (34.0522, -118.2437),
                 'San Diego': (32.7157, -117.1611),
