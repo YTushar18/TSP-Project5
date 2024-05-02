@@ -4,9 +4,9 @@ import folium
 import polyline
 import io
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QComboBox, QPushButton, QListWidget, QListWidgetItem, QLabel
+from PyQt5.QtWidgets import QHBoxLayout, QApplication, QMainWindow, QVBoxLayout, QWidget, QComboBox, QPushButton, QListWidget, QLabel
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from scipy.optimize import linear_sum_assignment
+# from scipy.optimize import linear_sum_assignment
 
 def get_osrm_route(start, end, server_url="http://router.project-osrm.org"):
     coords = f"{start[1]},{start[0]};{end[1]},{end[0]}"
@@ -20,13 +20,38 @@ def get_osrm_route(start, end, server_url="http://router.project-osrm.org"):
     else:
         raise Exception("OSRM API error: " + routes['code'])
 
+def solve_tsp_greedy(dist_matrix):
+    n = len(dist_matrix)
+    visited = [False] * n
+    tour = [0]  # Start at the first city
+    visited[0] = True
+    total_cost = 0
 
-def solve_tsp(dist_matrix):
-    row_ind, col_ind = linear_sum_assignment(dist_matrix)
-    total_cost = dist_matrix[row_ind, col_ind].sum()
-    return col_ind, total_cost
+    current_city = 0
+    while len(tour) < n:
+        next_city = None
+        min_dist = float('inf')
+        for i in range(n):
+            if not visited[i] and dist_matrix[current_city][i] < min_dist:
+                min_dist = dist_matrix[current_city][i]
+                next_city = i
+        tour.append(next_city)
+        visited[next_city] = True
+        total_cost += min_dist
+        current_city = next_city
+
+    # Return to the starting city
+    total_cost += dist_matrix[current_city][tour[0]]
+    tour.append(tour[0])
+    return tour, total_cost
+
+# def solve_tsp(dist_matrix):
+#     row_ind, col_ind = linear_sum_assignment(dist_matrix)
+#     total_cost = dist_matrix[row_ind, col_ind].sum()
+#     return col_ind, total_cost
 
 class TSPMapApp(QMainWindow):
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("TSP Solver for Southern California")
@@ -36,30 +61,40 @@ class TSPMapApp(QMainWindow):
     def initUI(self):
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
+        main_layout = QHBoxLayout(central_widget)  # Main horizontal layout
 
+        # Sidebar for input controls
+        sidebar = QVBoxLayout()
         self.start_city_dropdown = QComboBox()
-        self.start_city_dropdown.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura'])
-        layout.addWidget(self.start_city_dropdown)
+        self.start_city_dropdown.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura', 'Riverside', 'Bakersfield', 'Anaheim', 'Santa Barbara'])
+        sidebar.addWidget(self.start_city_dropdown)
 
         self.destination_cities_list = QListWidget()
-        self.destination_cities_list.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura'])
+        self.destination_cities_list.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura', 'Riverside', 'Bakersfield', 'Anaheim', 'Santa Barbara'])
         self.destination_cities_list.setSelectionMode(QListWidget.MultiSelection)
-        layout.addWidget(self.destination_cities_list)
+        sidebar.addWidget(self.destination_cities_list)
 
         self.calculate_button = QPushButton('Calculate Route')
         self.calculate_button.clicked.connect(self.calculate_route)
-        layout.addWidget(self.calculate_button)
+        sidebar.addWidget(self.calculate_button)
 
         self.refresh_button = QPushButton('Refresh')
         self.refresh_button.clicked.connect(self.refresh_app)
-        layout.addWidget(self.refresh_button)
+        sidebar.addWidget(self.refresh_button)
 
+        # Main display area for the map and route label
+        map_area = QVBoxLayout()  # Vertical layout to keep map and label aligned
         self.map_view = QWebEngineView()
-        layout.addWidget(self.map_view)
+        map_area.addWidget(self.map_view)
 
         self.route_label = QLabel("Route will be displayed here.")
-        layout.addWidget(self.route_label)
+        self.route_label.setMaximumHeight(30)  # Set a maximum height to the label
+        self.route_label.setStyleSheet("background-color: white; padding: 5px;")  # Optional: Adjust padding and background
+        map_area.addWidget(self.route_label)
+
+        # Add layouts to main layout
+        main_layout.addLayout(map_area, 75)  # Map area takes 75% of the horizontal space
+        main_layout.addLayout(sidebar, 25)   # Sidebar takes 25% of the horizontal space
 
         self.show_map()
 
@@ -72,15 +107,19 @@ class TSPMapApp(QMainWindow):
 
     def calculate_route(self):
         city_coords = {
-            'Los Angeles': (34.0522, -118.2437),
-            'San Diego': (32.7157, -117.1611),
-            'Irvine': (33.6846, -117.8265),
-            'Santa Ana': (33.7455, -117.8677),
-            'Long Beach': (33.7701, -118.1937),
-            'Pasadena': (34.1478, -118.1445),
-            'Malibu': (34.0259, -118.7798),
-            'Ventura': (34.2746, -119.2290)
-        }
+                'Los Angeles': (34.0522, -118.2437),
+                'San Diego': (32.7157, -117.1611),
+                'Irvine': (33.6846, -117.8265),
+                'Santa Ana': (33.7455, -117.8677),
+                'Long Beach': (33.7701, -118.1937),
+                'Pasadena': (34.1478, -118.1445),
+                'Malibu': (34.0259, -118.7798),
+                'Ventura': (34.2746, -119.2290),
+                'Riverside': (33.9533, -117.3962),
+                'Bakersfield': (35.3733, -119.0187),
+                'Anaheim': (33.8366, -117.9143),
+                'Santa Barbara': (34.4208, -119.6982)
+            }
         cities = [self.start_city_dropdown.currentText()] + [item.text() for item in self.destination_cities_list.selectedItems()]
 
         n = len(cities)
@@ -93,9 +132,26 @@ class TSPMapApp(QMainWindow):
                 dist_matrix[i][j] = dist_matrix[j][i] = dist
                 geometries[i][j] = geometries[j][i] = geom  # Store geometries symmetrically
 
-        route_indices, cost = solve_tsp(dist_matrix)
+
+
+                print("Distance Matrix:")
+                print(dist_matrix)
+                route_indices, cost = solve_tsp_greedy(dist_matrix)
+                print("Route:", route_indices)
+                print("Cost of the route:", cost)
+                
+                
+                # route_indices, cost = solve_tsp(dist_matrix)
+
+
+
+
         route = [cities[i] for i in route_indices]
-        route_text = " --> ".join(route) + f" | Total Distance: {cost} meters"
+
+        cost_in_miles = cost * 0.000621371 # to convert mtrs into miles
+
+        route_text = " --> ".join(route) + f" | Total Distance: {cost_in_miles:.2f} miles"
+
         self.update_map_and_label(route, city_coords, route_text, geometries)
 
     def update_map_and_label(self, route, city_coords, route_text, geometries):
@@ -107,16 +163,20 @@ class TSPMapApp(QMainWindow):
             end_coords = city_coords[end_city]
             folium.Marker(start_coords, popup=start_city).add_to(m)
 
-            # Correctly access and decode the polyline
-            route_path = polyline.decode(geometries[route.index(start_city)][route.index(end_city)])
-            folium.PolyLine(locations=route_path, color='blue', weight=5).add_to(m)
+            # Ensure geometry data is not None before decoding
+            route_geometry = geometries[route.index(start_city)][route.index(end_city)]
+            if route_geometry:
+                route_path = polyline.decode(route_geometry)
+                folium.PolyLine(locations=route_path, color='blue', weight=5).add_to(m)
+            else:
+                print(f"No route geometry available from {start_city} to {end_city}")
 
         # Close the loop to the start city
-        start_coords = city_coords[route[-1]]
-        end_coords = city_coords[route[0]]
         folium.Marker(end_coords, popup=route[0]).add_to(m)
-        route_path = polyline.decode(geometries[route.index(route[-1])][route.index(route[0])])
-        folium.PolyLine(locations=route_path, color='blue', weight=5).add_to(m)
+        route_geometry = geometries[route.index(route[-1])][route.index(route[0])]
+        if route_geometry:
+            route_path = polyline.decode(route_geometry)
+            folium.PolyLine(locations=route_path, color='blue', weight=5).add_to(m)
 
         data = io.BytesIO()
         m.save(data, close_file=False)
