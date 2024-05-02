@@ -63,13 +63,30 @@ class TSPMapApp(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)  # Main horizontal layout
 
+        # Applying a global style to the application that works well with both light and dark themes
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f0f0f0;  # Light grey background
+                color: #000000;  # Black text
+            }
+            QLabel, QComboBox, QListWidget, QPushButton {
+                background-color: #ffffff;  # White background for input and labels
+                color: #000000;  # Black text
+            }
+        """)
+
+
         # Sidebar for input controls
         sidebar = QVBoxLayout()
+        start_city_label = QLabel("Starting City")
+        sidebar.addWidget(start_city_label)
         self.start_city_dropdown = QComboBox()
         self.start_city_dropdown.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura', 'Riverside', 'Bakersfield', 'Anaheim', 'Santa Barbara'])
         sidebar.addWidget(self.start_city_dropdown)
 
         self.destination_cities_list = QListWidget()
+        destination_label = QLabel("Delivery Locations")
+        sidebar.addWidget(destination_label)
         self.destination_cities_list.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura', 'Riverside', 'Bakersfield', 'Anaheim', 'Santa Barbara'])
         self.destination_cities_list.setSelectionMode(QListWidget.MultiSelection)
         sidebar.addWidget(self.destination_cities_list)
@@ -89,7 +106,7 @@ class TSPMapApp(QMainWindow):
 
         self.route_label = QLabel("Route will be displayed here.")
         self.route_label.setMaximumHeight(30)  # Set a maximum height to the label
-        self.route_label.setStyleSheet("background-color: white; padding: 5px;")  # Optional: Adjust padding and background
+        self.route_label.setStyleSheet("padding: 5px;")  # Optional: Adjust padding and background
         map_area.addWidget(self.route_label)
 
         # Add layouts to main layout
