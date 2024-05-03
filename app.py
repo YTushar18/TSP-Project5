@@ -70,7 +70,7 @@ def solve_tsp_random_sampling(dist_matrix, samples=10000):
 
     return best_route, min_cost
 
-def solve_tsp_genetic_algorithm(dist_matrix):
+def solve_tsp_genetic_algorithm(dist_matrix, verbose=False):
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
     creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -95,11 +95,11 @@ def solve_tsp_genetic_algorithm(dist_matrix):
 
     pop = toolbox.population(n=300)
     hof = tools.HallOfFame(1)
-    algorithms.eaSimple(pop, toolbox, 0.7, 0.2, 50, halloffame=hof)
+    algorithms.eaSimple(pop, toolbox, 0.7, 0.2, 50, halloffame=hof, verbose=False)
 
     return hof[0], evalTSP(hof[0])[0]
 
-def solve_tsp_ant_colony_optimization(dist_matrix, num_ants=20, num_iterations=100, decay=0.5, alpha=1, beta=5):
+def solve_tsp_ant_colony_optimization(dist_matrix, num_ants=20, num_iterations=100, decay=0.5, alpha=1, beta=5, verbose=False):
     
     n = len(dist_matrix)
     pheromones = np.ones((n, n)) * 0.1
@@ -184,86 +184,6 @@ class TSPMapApp(QMainWindow):
         self.setWindowTitle("TSP Solver for Southern California")
         self.setGeometry(100, 100, 19200, 1080)
         self.initUI()
-
-    #def initUI(self):
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-        main_layout = QHBoxLayout(central_widget)  # Main horizontal layout
-
-
-        # Applying a global style to the application that works well with both light and dark themes
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #f0f0f0;  # Light grey background
-                color: #000000;  # Black text
-            }
-            QLabel, QComboBox, QListWidget, QPushButton {
-                background-color: #ffffff;  # White background for input and labels
-                color: #000000;  # Black text
-            }
-        """)
-
-
-        # Sidebar for input controls
-        sidebar = QVBoxLayout()
-        start_city_label = QLabel("Starting City")
-        sidebar.addWidget(start_city_label)
-        self.start_city_dropdown = QComboBox()
-        self.start_city_dropdown.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura', 'Riverside', 'Bakersfield', 'Anaheim', 'Santa Barbara'])
-        sidebar.addWidget(self.start_city_dropdown)
-
-        self.destination_cities_list = QListWidget()
-        destination_label = QLabel("Delivery Locations")
-        sidebar.addWidget(destination_label)
-        self.destination_cities_list.addItems(['Los Angeles', 'San Diego', 'Irvine', 'Santa Ana', 'Long Beach', 'Pasadena', 'Malibu', 'Ventura', 'Riverside', 'Bakersfield', 'Anaheim', 'Santa Barbara'])
-        self.destination_cities_list.setSelectionMode(QListWidget.MultiSelection)
-        sidebar.addWidget(self.destination_cities_list)
-
-        # Dropdown for selecting the TSP algorithm
-        self.algorithm_selection = QComboBox()
-        self.algorithm_selection.addItems(['Greedy', 'Nearest Neighbor', 'Random Sampling', 'Genetic Algorithm', 'Ant Colony Optimization'])
-        sidebar.addWidget(self.algorithm_selection)
-
-        self.calculate_button = QPushButton('Calculate Route')
-        self.calculate_button.clicked.connect(self.calculate_route)
-        sidebar.addWidget(self.calculate_button)
-
-        # Existing setup code...
-        self.execute_all_button = QPushButton('Execute All')
-        self.execute_all_button.clicked.connect(self.execute_all_algorithms)
-        sidebar.addWidget(self.execute_all_button)
-
-        self.refresh_button = QPushButton('Refresh')
-        self.refresh_button.clicked.connect(self.refresh_app)
-        sidebar.addWidget(self.refresh_button)
-
-        # Main display area for the map and route label
-        map_area = QVBoxLayout()  # Vertical layout to keep map and label aligned
-        self.map_view = QWebEngineView()
-        map_area.addWidget(self.map_view)
-
-        self.route_label = QLabel("Route will be displayed here.")
-        self.route_label.setMaximumHeight(30)  # Set a maximum height to the label
-        self.route_label.setStyleSheet("padding: 5px;")  # Optional: Adjust padding and background
-        map_area.addWidget(self.route_label)
-
-        # Setup for matplotlib chart
-        self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
-        map_area.addWidget(self.canvas)  # Add the canvas to the map area or another part of the layout
-
-        # Setup for results table
-        self.results_table = QTableWidget()
-        self.results_table.setColumnCount(3)
-        self.results_table.setHorizontalHeaderLabels(["Algorithm", "Total Distance", "Path"])
-        map_area.addWidget(self.results_table)
-
-        # Add layouts to main layout
-        main_layout.addLayout(map_area, 75)  # Map area takes 75% of the horizontal space
-        main_layout.addLayout(sidebar, 25)   # Sidebar takes 25% of the horizontal space
-
-        self.show_map()
-       
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -363,13 +283,13 @@ class TSPMapApp(QMainWindow):
         self.results_table = QTableWidget()
         self.results_table.setColumnCount(3)
         self.results_table.setHorizontalHeaderLabels(["Algorithm", "Total Distance", "Path"])
-        self.results_table.setFixedHeight(300)  # Optionally set fixed height
+        self.results_table.setFixedHeight(170)  # Optionally set fixed height
         map_area.addWidget(self.results_table)
 
         # Setup for matplotlib chart
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
-        self.canvas.setFixedHeight(200)  # Optionally set fixed height
+        self.canvas.setFixedHeight(330)  # Optionally set fixed height
         map_area.addWidget(self.canvas)
 
         # Adding the scroll area to the main layout
@@ -500,14 +420,28 @@ class TSPMapApp(QMainWindow):
             names.append(name)
 
         self.plot_times(names, times)
+        print(names, times)
         self.update_results_table(results)
 
     def plot_times(self, names, times):
-        self.figure.clear()
-        plt.bar(names, times, color='blue')
-        plt.ylabel('Execution Time (s)')
-        plt.title('Algorithm Execution Times')
-        self.canvas.draw()
+        self.figure.clear()  # Clear the existing figure
+        ax = self.figure.add_subplot(111)  # Add a subplot to your figure
+
+        bars = ax.bar(names, times, color='blue')  # Create the bars
+        ax.set_ylabel('Execution Time (s)')
+        ax.set_title('Algorithm Execution Times')
+
+        # Adding the text annotations directly on top of the bars
+        for bar in bars:
+            yval = bar.get_height()
+            # Adjust the position to be on top of the bar, ensure it's always visible
+            text_position = yval + max(times) * 0.05  # Adding 5% of the max value for offset
+
+            # Place text at the adjusted position
+            ax.text(bar.get_x() + bar.get_width()/2, text_position, '{:.5f}'.format(yval),
+                    ha='center', va='bottom', color='black', fontsize=8)  # Ensure color contrasts well
+
+        self.canvas.draw()  # Draw the canvas with the new plot
 
     def update_results_table(self, results):
         self.results_table.setRowCount(len(results))
@@ -546,13 +480,28 @@ class TSPMapApp(QMainWindow):
         self.route_label.setText(route_text)
 
     def refresh_app(self):
-        # Clear selections
+        # Reset dropdowns to the first item
         self.start_city_dropdown.setCurrentIndex(0)
+        self.algorithm_selection.setCurrentIndex(0)
+        
+        # Clear all selections in the QListWidget
         self.destination_cities_list.clearSelection()
+        
+        # Reset the route label
+        self.route_label.setText("Route will be displayed here.")
+        
+        # Clear and reset the graph
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)  # You may want to customize this if your initial plot setup is different
+        ax.set_title('Algorithm Execution Times')
+        ax.set_ylabel('Execution Time (s)')
+        self.canvas.draw()
 
         # Reset map and label
         self.show_map()
-        self.route_label.setText("Route will be displayed here.")
+        
+        # Clear the results table
+        self.results_table.setRowCount(0)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
