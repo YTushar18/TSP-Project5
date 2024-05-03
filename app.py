@@ -496,6 +496,9 @@ class TSPMapApp(QMainWindow):
         ax.set_title('Algorithm Execution Times')
         ax.set_ylabel('Execution Time (s)')
         self.canvas.draw()
+
+        # Reset map and label
+        self.show_map()
         
         # Clear the results table
         self.results_table.setRowCount(0)
