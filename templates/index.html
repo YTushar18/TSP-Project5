@@ -1,0 +1,108 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TSP Solver for Southern California</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .background {
+            background-image: url("https://github.com/shivamSID2306/image-storage/blob/main/andrew-stutesman-l68Z6eF2peA-unsplash.jpg?raw=true");
+            height: 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: mapTravel 20s ease-in-out infinite alternate;
+        }
+        @keyframes mapTravel {
+            0%, 100% {
+                background-size: 100% 100%;
+            }
+            50% {
+                background-size: 105% 105%;
+            }
+        }
+        .content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 300px;
+            position: relative;
+            overflow: visible;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 15px 32px;
+            margin: 15px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .car {
+            width: 100px;
+            height: 100px;
+            background-image: url("https://github.com/shivamSID2306/image-storage/blob/main/road.png?raw=true");
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: absolute;
+            top: 75%;
+            left: 0;
+            animation: run 5s linear infinite;
+        }
+        @keyframes run {
+            0% {
+                left: 0;
+            }
+            50% {
+                left: calc(100% - 100px);
+            }
+            100% {
+                left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background">
+        <div class="content">
+            <h1>Welcome to the TSP Solver!</h1>
+            <p>Click below to start planning your route across Southern California.</p>
+            <button onclick="startApp()">Start TSP Solver</button>
+            <div class="car"></div>
+        </div>
+    </div>
+
+    <script>
+        function startApp() {
+            fetch("/start_app")
+                .then((response) => response.text())
+                .then((data) => alert(data))
+                .catch((error) => alert("Failed to start the application: " + error));
+        }
+    </script>
+</body>
+</html>
+
